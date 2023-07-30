@@ -87,8 +87,7 @@ def post_ad(ad: CreateAd, token: str = Depends(oauth2_cheme), db: Session = Depe
 def get_ad(id: int, db: Session = Depends(get_db)):
     ad = ads_repository.get_by_id(db, id)
     if ad:
-        return {"id": ad.id, "type": ad.type, "price": ad.price, "address": ad.address, "area": ad.area, 
-                "rooms_count": ad.rooms_count, "description": ad.description, "total_comments": len(comments_repository.get_all(id, db))}
+        return ad
     raise HTTPException(status_code = 400, detail = "There is no Ad with such ID")
 
 @app.patch("/shanyraks/{id}")

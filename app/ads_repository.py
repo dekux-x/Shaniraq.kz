@@ -15,6 +15,7 @@ class Ad(Base):
     area = Column(Float)
     rooms_count = Column(Integer)
     description = Column(String)
+    total_comments = Column(Integer, default = 0)
 
 class CreateAd(BaseModel):
     type: str
@@ -32,7 +33,7 @@ class GetAd(BaseModel):
     area: float
     rooms_count: int
     description: str
-    total_comments: int = 0
+    total_comments: int
     
 class AdsRepository:
     def get_by_id(self, db: Session, ad_id: int)-> Ad:

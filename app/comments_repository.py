@@ -3,7 +3,11 @@ from sqlalchemy.orm import Session
 from .database import Base
 from datetime import datetime
 
+from .ads_repository import AdsRepository
+
 from pydantic import BaseModel
+
+ads_repository = AdsRepository()
 
 class Comment(Base):
     __tablename__ = "comments"
@@ -37,6 +41,8 @@ class CommentsRepository:
         db.add(db_comment)
         db.commit()
         db.refresh(db_comment)
+        db_ad = ads_repository.get_by_id(db, ad_id)
+        ads_repository.update(db, db_ad, {"total_comments": db_ad.total_comments + 1})
         return db_comment
     
     def update(self, db: Session, comment: Comment, new_inform: dict):
@@ -51,4 +57,6 @@ class CommentsRepository:
         db.query(Comment).filter(Comment.id == comment.id).delete()
 
         db.commit()
+        db_ad = ads_repository.get_by_id(db, comment.ad_id)
+        ads_repository.update(db, db_ad, {"total_comments": db_ad.total_comments - 1})
         return True
