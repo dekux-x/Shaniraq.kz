@@ -27,12 +27,15 @@ class GetComment(BaseModel):
     created_at: str
     author_id: int
 
+class GetCommentsList(BaseModel):
+    comments: list[GetComment]
+
 class CommentsRepository:
     def get_by_id(self, db: Session, comment_id: int)-> Comment:
         return db.query(Comment).filter(Comment.id == comment_id).first()
     
     def get_all(self, ad_id: int, db: Session, skip: int = 0, limit: int = 10)-> list[GetComment]:
-        return db.query(Comment).limit(Comment.ad_id == ad_id).offset(skip).limit(limit).all()
+        return db.query(Comment).filter(Comment.ad_id == ad_id).offset(skip).limit(limit).all()
 
     def save(self, db: Session, comment: CreateComment, author_id: int, ad_id: int):
         date = str(datetime.now())[0:19]

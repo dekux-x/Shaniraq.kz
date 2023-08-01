@@ -9,6 +9,7 @@ from app.database import Base
 from app.users_repository import User
 from app.ads_repository import Ad
 from app.comments_repository import Comment
+from app.favorites_repository import FavoriteAd
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

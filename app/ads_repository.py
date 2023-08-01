@@ -34,6 +34,10 @@ class GetAd(BaseModel):
     rooms_count: int
     description: str
     total_comments: int
+
+class GetAdsList(BaseModel):
+    total: int
+    objects: list[GetAd]
     
 class AdsRepository:
     def get_by_id(self, db: Session, ad_id: int)-> Ad:
@@ -49,6 +53,19 @@ class AdsRepository:
         db.commit()
         db.refresh(db_ad)
         return db_ad
+    
+    def get_list(self, lim: int, skip: int, price_until: int, price_from: int, type: str, rooms_count: int, db: Session) -> list[GetAd]:
+        db_ads = db.query(Ad)
+        if price_from:
+            db_ads = db_ads.filter(Ad.price >= price_from)
+        if price_until:
+            db_ads = db_ads.filter(Ad.price <= price_until)
+        if rooms_count:
+            db_ads = db_ads.filter(Ad.rooms_count == rooms_count)
+        if type:
+            db_ads = db_ads.filter(Ad.type == type)
+        return db_ads.offset(skip).limit(lim).all()
+    
     
     def update(self, db: Session, ad: Ad, new_inform: dict):
         

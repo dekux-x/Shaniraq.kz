@@ -7,8 +7,9 @@ from jose import jwt
 
 from .database import Base, SessionLocal, engine
 from .users_repository import User, CreateUser, UserRepository, GetUser
-from .ads_repository import CreateAd, GetAd, Ad, AdsRepository
-from .comments_repository import CreateComment, GetComment, CommentsRepository
+from .ads_repository import CreateAd, GetAd, AdsRepository, GetAdsList
+from .comments_repository import CreateComment, GetComment, CommentsRepository, GetCommentsList
+from .favorites_repository import GetFavoriteAd, FavoriteAdsRepository, GetListFavAds
 
 
 
@@ -18,6 +19,7 @@ oauth2_cheme = OAuth2PasswordBearer(tokenUrl="auth/users/login")
 users_repository = UserRepository()
 ads_repository = AdsRepository()
 comments_repository = CommentsRepository()
+favads_repository = FavoriteAdsRepository()
 
 Base.metadata.create_all(bind=engine)
 
@@ -115,6 +117,13 @@ def delete_ad(id: int, token: str = Depends(oauth2_cheme), db: Session = Depends
         raise HTTPException(status_code = 403)
     ads_repository.delete(db, ad)
     return Response(status_code = 200)
+@app.get("/shanyraks", response_model = GetAdsList)
+def get_list(limit: int, offset: int, rooms_count: int = None, price_from: int = None, 
+             price_until: int = None, type: str = None, db: Session = Depends(get_db)):
+    ads_list = ads_repository.get_list(lim = limit, skip= offset, price_from=price_from, price_until= price_until, rooms_count= rooms_count, type= type, db=db)
+    total = len(ads_list)
+    return {"total": total, "objects": ads_list}
+
     
 @app.post("/shanyraks/{id}/comments")
 def post_comment(id: int, comment: CreateComment, token: str = Depends(oauth2_cheme), db: Session = Depends(get_db)):
@@ -122,7 +131,7 @@ def post_comment(id: int, comment: CreateComment, token: str = Depends(oauth2_ch
     comments_repository.save(db, comment, user_id, id)
     return Response(status_code = 200)
 
-@app.get("/shanyraks/{id}/comments")
+@app.get("/shanyraks/{id}/comments", response_model = GetCommentsList)
 def get_comments(id: int, db: Session = Depends(get_db)):
     ad = ads_repository.get_by_id(db, id)
     if not ad:
@@ -153,10 +162,38 @@ def delete_comment(id: int, comment_id: int, token: str = Depends(oauth2_cheme),
     comment = comments_repository.get_by_id(db,comment_id)
     if not comment:
         raise HTTPException(status_code = 400, detail = "There is no such Comment")
-    if user_id != comment.author_id:
+    if user_id != comment.author_id and user_id != ad.user_id:
         raise HTTPException(status_code = 403)
     comments_repository.delete(db, comment)
     return Response(status_code = 200)
+
+@app.post("/auth/users/favorites/shanyraks/{id}")
+def post_fav_ad(id: int, db: Session = Depends(get_db), token: str = Depends(oauth2_cheme)):
+    ad = ads_repository.get_by_id(db, id)
+    if not ad:
+        raise HTTPException(status_code = 400, detail = "There is no such Ad")
+    user_id = decode_jwt(token)
+    if favads_repository.get_unique(db, ad.id, user_id):
+        raise HTTPException(status_code = 400, detail = "You already add this ad into your favorites list")
+    favads_repository.save(db, ad, user_id, )
+    return Response(status_code = 200)
+
+@app.get("/auth/users/favorites/shanyraks", response_model = GetListFavAds)
+def get_fav_ads(token: str = Depends(oauth2_cheme), db: Session = Depends(get_db)):
+    user_id = decode_jwt(token)
+    favorites = favads_repository.get_liked(db, user_id)
+    return {"shanyraks": favorites}
+
+@app.delete("/auth/users/favorites/shanyraks/{id}")
+def delete_fav_ad(id: int, token: str = Depends(oauth2_cheme), db: Session = Depends(get_db) ):
+    user_id = decode_jwt(token)
+    fav_ad = favads_repository.get_unique(db,id, user_id)
+    if not fav_ad:
+        raise HTTPException(status_code = 400, detail = "You don't have such Ad in favorites list")
+    favads_repository.delete(db, fav_ad)
+    return Response(status_code = 200)
+
+
     
 
     
