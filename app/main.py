@@ -117,13 +117,12 @@ def delete_ad(id: int, token: str = Depends(oauth2_cheme), db: Session = Depends
         raise HTTPException(status_code = 403)
     ads_repository.delete(db, ad)
     return Response(status_code = 200)
+
 @app.get("/shanyraks", response_model = GetAdsList)
 def get_list(limit: int, offset: int, rooms_count: int = None, price_from: int = None, 
              price_until: int = None, type: str = None, db: Session = Depends(get_db)):
     ads_list = ads_repository.get_list(lim = limit, skip= offset, price_from=price_from, price_until= price_until, rooms_count= rooms_count, type= type, db=db)
-    total = len(ads_list)
-    return {"total": total, "objects": ads_list}
-
+    return ads_list
     
 @app.post("/shanyraks/{id}/comments")
 def post_comment(id: int, comment: CreateComment, token: str = Depends(oauth2_cheme), db: Session = Depends(get_db)):

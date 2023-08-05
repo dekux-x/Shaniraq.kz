@@ -54,7 +54,7 @@ class AdsRepository:
         db.refresh(db_ad)
         return db_ad
     
-    def get_list(self, lim: int, skip: int, price_until: int, price_from: int, type: str, rooms_count: int, db: Session) -> list[GetAd]:
+    def get_list(self, lim: int, skip: int, price_until: int, price_from: int, type: str, rooms_count: int, db: Session) -> GetAdsList:
         db_ads = db.query(Ad)
         if price_from:
             db_ads = db_ads.filter(Ad.price >= price_from)
@@ -64,7 +64,8 @@ class AdsRepository:
             db_ads = db_ads.filter(Ad.rooms_count == rooms_count)
         if type:
             db_ads = db_ads.filter(Ad.type == type)
-        return db_ads.offset(skip).limit(lim).all()
+        total = len(db_ads.all())
+        return {"total": total, "objects": db_ads.offset(skip).limit(lim).all()}
     
     
     def update(self, db: Session, ad: Ad, new_inform: dict):
